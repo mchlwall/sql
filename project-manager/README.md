@@ -98,6 +98,28 @@ GROUP BY p.id;
 SELECT title, created_at, updated_at FROM tasks WHERE updated_at > created_at;
 ```
 
+## Saved queries and checks
+
+`queries/` holds numbered queries. 01, 02 and 04 are reports. 03, 05 and 06 are rule checks: each returns the rows that break a rule, so an empty result means the rule holds.
+
+`fixtures/project-manager.db` is a copy of the database taken right after seeding on 2026-11-12. You can query it without running the app:
+
+```bash
+sqlite3 -readonly -header -column project-manager/fixtures/project-manager.db < project-manager/queries/03_projects_without_tasks.sql
+```
+
+CI runs three checks on every pull request. To run them locally from this repo's root:
+
+```bash
+shellcheck project-manager/scripts/*.sh                       # brew install shellcheck
+sqlfluff lint project-manager/queries --dialect sqlite         # pipx install sqlfluff
+./project-manager/scripts/smoke.sh                             # runs each query against the fixture
+```
+
+`smoke.sh` checks that each query returns the expected number of rows. When you add or change a query, update its expected count in `smoke.sh`. The smoke test fails if a query has no expected count.
+
+Queries that depend on dates compare against `'2026-11-12'` rather than `date('now')`. The fixture's dates are frozen, so `date('now')` would give different results as time passes. If you regenerate the fixture by re-running the seed and copying the database again, update that date and the expected counts.
+
 ## Stopping and resetting
 
 ```bash
